@@ -15,6 +15,17 @@ import pandas as pd
 import skfuzzy as fuzz 
 from skfuzzy import control as ctrl 
 
+
+#--------------------------------------------------#
+#aux functions
+
+#computes MAE (mean absolute error) between reference results and fuzzy results
+def mae(dataset):
+    s = np.sum(dataset['Difference'])
+    return s / dataset.shape[0]
+
+#--------------------------------------------------#
+
 #converts csv file into dataframe
 dataset = pd.read_csv("Admission_Predict.csv", index_col=0)
 #adds two more columns
@@ -37,60 +48,50 @@ rExp = ctrl.Antecedent(np.arange(0, 2, 1), 'Research experience')
 chance = ctrl.Consequent(np.arange(0, 1.1, 0.01), 'Chance of admit')
 
 #--------------------------------------------------#
-
 #membership functions
+
 #first choice: automatically provided triangular functions 
 def tri():   
     gre.automf(3)
-    uRating.automf(3)
     gpa.automf(3)
     chance.automf(3) 
-
     toefl.automf(3)
-    sop.automf(3)
-    lor.automf(3)
-
+    
 #second choice: custom gaussian functions 
 def gauss(): 
     #last parameter = sigma value
-    sigma=1
     gre['poor'] = fuzz.gaussmf(gre.universe, 0, 60)
     gre['average'] = fuzz.gaussmf(gre.universe, 170, 60)
     gre['good'] = fuzz.gaussmf(gre.universe, 340, 60)
-    uRating['poor'] = fuzz.gaussmf(uRating.universe, 1, sigma)
-    uRating['average'] = fuzz.gaussmf(uRating.universe, 3, sigma)
-    uRating['good'] = fuzz.gaussmf(uRating.universe, 5, sigma)
     gpa['poor'] = fuzz.gaussmf(gpa.universe, 0, 2)
     gpa['average'] = fuzz.gaussmf(gpa.universe, 5, 2)
     gpa['good'] = fuzz.gaussmf(gpa.universe, 10, 2)
     chance['poor'] = fuzz.gaussmf(chance.universe, 0, 0.2)
     chance['average'] = fuzz.gaussmf(chance.universe, 0.5, 0.2)
     chance['good'] = fuzz.gaussmf(chance.universe, 1, 0.2)
-
     toefl['poor'] = fuzz.gaussmf(toefl.universe, 0, 20)
     toefl['average'] = fuzz.gaussmf(toefl.universe, 60, 20)
     toefl['good'] = fuzz.gaussmf(toefl.universe, 120, 20)
-    sop['poor'] = fuzz.gaussmf(sop.universe, 1, sigma)
-    sop['average'] = fuzz.gaussmf(sop.universe, 3, sigma)
-    sop['good'] = fuzz.gaussmf(sop.universe, 5, sigma)
-    lor['poor'] = fuzz.gaussmf(lor.universe, 1, sigma)
-    lor['average'] = fuzz.gaussmf(lor.universe, 3, sigma)
-    lor['good'] = fuzz.gaussmf(lor.universe, 5, sigma)
 
 #for rExp it would make no sense to use the standard triangular or gaussian functions
 #let us customize it and use it like this in both cases 
 rExp['no'] = fuzz.trimf(rExp.universe, [0, 0, 1])
 rExp['yes'] = fuzz.trimf(rExp.universe, [0, 1, 1])
 
+#for these parameters, a triangular function suits better
+uRating.automf(3)
+sop.automf(3)
+lor.automf(3)
+
 #comment tri() to run the system on gaussian membership functions, and vice-versa 
 #tri()
 gauss()
 
 #--------------------------------------------------#
-
 #membership functions graphs 
 #this block can be left commented since it is not needed for the system to work
 #the raw_input lines are necessary to avoid a bug (at least in my work environment) 
+"""
 gre.view()
 raw_input("Press Enter to continue...")
 uRating.view()
@@ -107,10 +108,10 @@ lor.view()
 raw_input("Press Enter to continue...")
 rExp.view()
 raw_input("Press Enter to continue...")
-
+"""
 #--------------------------------------------------#
-
 #rules
+
 rule1 = ctrl.Rule(gre['good'] & gpa['good'], chance['good'])
 rule2 = ctrl.Rule(gre['poor'] | gpa['poor'] | rExp['no'], chance['poor'])
 rule3 = ctrl.Rule(uRating['poor'], chance['good'])
@@ -123,7 +124,6 @@ rule6 = ctrl.Rule(lor['poor'], chance['poor'])
 #raw_input("Press Enter to continue...")
 
 #--------------------------------------------------#
-
 #running the system 
 
 #selects rules to build the system on, among the ones described above 
@@ -151,6 +151,7 @@ for i in range(dataset.shape[0]):
 print(dataset.head(10))
 
 #--------------------------------------------------#
+#results analysis
 
 #creates two more dataframes for results storaging 
 bestResults = pd.read_csv("Best_Results.csv", index_col=0)
@@ -186,6 +187,9 @@ for i in range(dataset.shape[0]):
 
 print(bestResults.head(20))
 print(worstResults.head(20))
+
+print mae(dataset)
+print mse(dataset) 
 
 #chance.view(sim = myChance)
 #raw_input("Press Enter to continue...")
