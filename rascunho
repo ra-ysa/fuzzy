@@ -1,4 +1,0 @@
-MC906 - Trabalho 3 - Rascunho
-
-Dataset com os seguintes atributos:
-id; GRE score (0 a 340); TOEFL score (0 a 120); university rating (1 a 5); SOP strength (1 a 5); LOR strength (1 a 5); GPA (0 a 10); Research experience (1 ou 0); chance (0 a 1), calculada por regressão 
